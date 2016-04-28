@@ -1,5 +1,6 @@
 class Advisor < ActiveRecord::Base
-	belongs_to :shift
+	has_many :shift_assignments
+	has_many :shifts, :through => :shift_assignments
 
 	def self.is_off?(shift, advisor)
 		@vacations = Vacation.where(name: advisor.name)				#pull all the time off for this advisor

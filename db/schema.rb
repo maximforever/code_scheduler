@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160428030021) do
+ActiveRecord::Schema.define(version: 20160428110404) do
 
   create_table "advisors", force: :cascade do |t|
     t.string   "name"
@@ -28,10 +28,21 @@ ActiveRecord::Schema.define(version: 20160428030021) do
     t.integer  "sql",        default: 0
     t.integer  "git",        default: 0
     t.integer  "cmd",        default: 0
-    t.integer  "shift_id"
     t.datetime "created_at",             null: false
     t.datetime "updated_at",             null: false
   end
+
+  create_table "shift_assignments", force: :cascade do |t|
+    t.integer  "shift_id"
+    t.integer  "advisor_id"
+    t.datetime "start"
+    t.datetime "end"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "shift_assignments", ["advisor_id"], name: "index_shift_assignments_on_advisor_id"
+  add_index "shift_assignments", ["shift_id"], name: "index_shift_assignments_on_shift_id"
 
   create_table "shifts", force: :cascade do |t|
     t.datetime "start"
