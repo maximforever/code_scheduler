@@ -2,47 +2,77 @@ class Shift < ActiveRecord::Base
 	has_many :shift_assignments
 	has_many :advisors, :through => :shift_assignments
 
-	def self.fill_shift(shift)
+	def self.fillShift(shift)
 
 			puts "START -----------------------------------"
 			shift.advisor_number.times do
+				puts "Advisors so far: #{shift.advisors.count}"
 
 				empty_shift = true;
-
 				not_available = true;
 
-				while not_available do 
 
-					updateShiftProficiency(shift)
-					rand_advisor = nil
-					rand_num = Advisor.count													#pick random advisor
-					
 
-					while rand_advisor.nil? do
-						rand_advisor = Advisor.find_by_id(Random.rand(rand_num) + 4)
+				while not_available do
+					while (shift.rails < 3 || shift.angular < 3 || shift.python < 3 || shift.php < 3) do
+
+						updateShiftProficiency(shift)
+						rand_advisor = nil
+						rand_num = Advisor.count													#pick random advisor
+						
+
+						while rand_advisor.nil? do
+							rand_advisor = Advisor.find_by_id(Random.rand(rand_num) + 4)
+						end
+
+						puts "Pulled up #{rand_advisor.name}"
+						
+						not_available = false if !Advisor.is_off?(shift, rand_advisor)				# is this advisor available?
 					end
 
-					puts "Found #{rand_advisor.name}"
-					
-					not_available = false if !Advisor.is_off?(shift, rand_advisor)				# is this advisor available?
+
 					puts "#{rand_advisor.name} can work this shift!" if !not_available	
 					if !not_available
 					  placeOnShift(rand_advisor, shift)
 					end
 
+	# =>  THERE IS A PROBLEM IN THE LOGIC HERE - 
+	# 	  if the shift is lacking in Rails, and the advisor is not strong in Rails, 
+	# 			=> we should move on to the next Advisor?
+	# 			=> we should move on to the next skill?
+
 					if shift.rails < 3
-					  placeOnShift(rand_advisor, shift) if rand_advisor.rails > 1
+						puts "Shift is lacking in Rails. Rails is at #{shift.rails}"
+					  if rand_advisor.rails > 1
+					  	puts "#{rand_advisor.name} is #{rand_advisor.rails} - Good enough for Rails!"
+							placeOnShift(rand_advisor, shift) 
+						end
 					elsif shift.angular < 3
-					  placeOnShift(rand_advisor, shift) if rand_advisor.angular > 1
+						puts "Shift is lacking in Angular. Angular is at #{shift.angular}"
+					  if rand_advisor.angular > 1 
+					  	puts "#{rand_advisor.name} is #{rand_advisor.angular} -  Good enough for Angular!"
+					  	placeOnShift(rand_advisor, shift) 
+						end
 					elsif shift.python < 3
-					  placeOnShift(rand_advisor, shift) if rand_advisor.angular > 1
+						puts "Shift is lacking in Python. Python is at #{shift.python}"
+					  if rand_advisor.python > 1
+					  	puts "#{rand_advisor.name} is #{rand_advisor.python} -  Good enough for Python!"
+					  	placeOnShift(rand_advisor, shift) 
+						end
 					elsif shift.php < 3
-					  placeOnShift(rand_advisor, shift) if rand_advisor.angular > 1
+						puts "Shift is lacking in PHP. PHP is at #{shift.php}"
+					  if rand_advisor.php > 1
+					  	puts "#{rand_advisor.name} is #{rand_advisor.php} -  Good enough for PHP!"
+					  	placeOnShift(rand_advisor, shift) 
+					  end
 					end
 
-				end
-			end
 
+			 end
+			end
+			
+			updateShiftProficiency(shift)
+			puts "Total advisors on this shift: #{shift.advisors.count}"
 			puts "END -----------------------------------"
 
 
@@ -64,7 +94,9 @@ class Shift < ActiveRecord::Base
 		return length
 	end
 
-	def self.updateShiftProficiency(shift)
+	def self.updateShiftProficiency(s)
+
+		shift = Shift.find(s.id)
 
 		shift.html = 0
 		shift.js = 0
@@ -81,20 +113,26 @@ class Shift < ActiveRecord::Base
 
 		puts "There are currently #{shift.advisors.count} advisors on shift"
 
-		shift.advisors.each do |a|
-			shift.html 		+= a.html
-			shift.js 		+= a.js
-			shift.jquery 	+= a.jquery
+		shift.advisors.each do |a|				#cycle through each advisor in shift and add their proficiencies
+			puts "adding proficiencies for #{a.name}"
+			shift.html 			+= a.html
+			shift.js 				+= a.js
+			shift.jquery 		+= a.jquery
 			shift.angular 	+= a.angular
-			shift.ruby 		+= a.ruby
-			shift.rails 	+= a.rails
-			shift.php 		+= a.php
-			shift.python 	+= a.python
-			shift.java 		+= a.java
-			shift.sql 		+= a.sql
-			shift.git 		+= a.git
-			shift.cmd 		+= a.cmd	
+			shift.ruby 			+= a.ruby
+			shift.rails 		+= a.rails
+			shift.php 			+= a.php
+			shift.python 		+= a.python
+			shift.java 			+= a.java
+			shift.sql 			+= a.sql
+			shift.git 			+= a.git
+			shift.cmd 			+= a.cmd	
+			puts "shift html is now at #{shift.html}"
+			shift.save
 		end
+
+		shift.save
+
 
 	end
 
