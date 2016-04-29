@@ -171,7 +171,7 @@ class Shift < ActiveRecord::Base
 			shift.save
 		end
 
-		puts "Final proficiency: #{Shift.find(shift.id).getProfs}"
+		puts "Updated proficiency: #{Shift.find(shift.id).getProfs}"
 
 
 	end

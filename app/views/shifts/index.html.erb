@@ -1,0 +1,35 @@
+<h1>Shift Assignments</h1>
+
+    <p> There are currently <%= @all_shifts.count %> shifts assigned in total.
+<br>
+
+
+<table>
+    <tr>  
+        <td>Shift #:</td>  
+        <td>Start time:</td>
+        <td>End time:</td>
+        <td>Advisor name:</td>
+        <td>Rails</td>
+        <td>Angular</td>
+        <td>Python</td>
+        <td>PHP</td>
+    </tr>
+    <%  i = 0 %>
+    <% @all_shifts.each do |s| %>
+        <% @shift = Shift.where(s.shift_id) %>
+        <% @advisor = Advisor.find(s.advisor_id) %>
+        <tr>
+            <td><%= i %></td>
+            <td><%= s.start.day %>/<%= s.start.month %>, <%= s.start.hour %>:00</td>
+            <td><%= s.end.day %>/<%= s.end.month %>, <%= s.end.hour %>:<%= s.end.min %></td>
+            <td><%= @advisor.name %></td>
+
+        </tr> 
+
+        <% i += 1 %>
+    <% end %>
+
+
+</table>
+

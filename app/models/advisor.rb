@@ -55,12 +55,7 @@ class Advisor < ActiveRecord::Base
 		end
 							
 		self.shifts.each do |s|			#go through all the shifts and check that none of them are today
-			puts "testing shift on #{s.start}"
-
-			puts s.start.day
-			puts shift.start.day
-			puts s.start.month
-			puts shift.start.month
+			puts "testing shift on #{shift.start.month}/#{shift.start.day}"
 
 			if (s.start.day.to_i == shift.start.day.to_i && s.start.month.to_i == shift.start.month.to_i)
 				"#{self.name} is already working that day, on #{shift.start.month}/#{shift.start.day}"
