@@ -2,95 +2,136 @@ class Shift < ActiveRecord::Base
 	has_many :shift_assignments
 	has_many :advisors, :through => :shift_assignments
 
-	def self.fillShift(shift)
-
-			puts "START -----------------------------------"
-			shift.advisor_number.times do
-				puts "Advisors so far: #{shift.advisors.count}"
-
-				empty_shift = true;
-				not_available = true;
 
 
+	def self.fillAllShifts						# the nuclear option
+		all_shifts = Shift.all
 
-				while not_available do
-					while (shift.rails < 3 || shift.angular < 3 || shift.python < 3 || shift.php < 3) do
-
-						updateShiftProficiency(shift)
-						rand_advisor = nil
-						rand_num = Advisor.count													#pick random advisor
-						
-
-						while rand_advisor.nil? do
-							rand_advisor = Advisor.find_by_id(Random.rand(rand_num) + 4)
-						end
-
-						puts "Pulled up #{rand_advisor.name}"
-						
-						not_available = false if !Advisor.is_off?(shift, rand_advisor)				# is this advisor available?
-					end
-
-
-					puts "#{rand_advisor.name} can work this shift!" if !not_available	
-					if !not_available
-					  placeOnShift(rand_advisor, shift)
-					end
-
-	# =>  THERE IS A PROBLEM IN THE LOGIC HERE - 
-	# 	  if the shift is lacking in Rails, and the advisor is not strong in Rails, 
-	# 			=> we should move on to the next Advisor?
-	# 			=> we should move on to the next skill?
-
-					if shift.rails < 3
-						puts "Shift is lacking in Rails. Rails is at #{shift.rails}"
-					  if rand_advisor.rails > 1
-					  	puts "#{rand_advisor.name} is #{rand_advisor.rails} - Good enough for Rails!"
-							placeOnShift(rand_advisor, shift) 
-						end
-					elsif shift.angular < 3
-						puts "Shift is lacking in Angular. Angular is at #{shift.angular}"
-					  if rand_advisor.angular > 1 
-					  	puts "#{rand_advisor.name} is #{rand_advisor.angular} -  Good enough for Angular!"
-					  	placeOnShift(rand_advisor, shift) 
-						end
-					elsif shift.python < 3
-						puts "Shift is lacking in Python. Python is at #{shift.python}"
-					  if rand_advisor.python > 1
-					  	puts "#{rand_advisor.name} is #{rand_advisor.python} -  Good enough for Python!"
-					  	placeOnShift(rand_advisor, shift) 
-						end
-					elsif shift.php < 3
-						puts "Shift is lacking in PHP. PHP is at #{shift.php}"
-					  if rand_advisor.php > 1
-					  	puts "#{rand_advisor.name} is #{rand_advisor.php} -  Good enough for PHP!"
-					  	placeOnShift(rand_advisor, shift) 
-					  end
-					end
-
-
-			 end
-			end
-			
-			updateShiftProficiency(shift)
-			puts "Total advisors on this shift: #{shift.advisors.count}"
-			puts "END -----------------------------------"
+		all_shifts.each do |shift|			
+			shift.fillShift
+		end
 
 
 	end
 
 
-	def self.knowsRails(advisor)
+
+	def fillShift
+
+		puts "STARTING ==================================="
+		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
+
+		proficiency_bar = 3				# this is pretty important - how much proficiency (max 5 per advisor) do we want for our courses?
+
+		rails_try = 0							# we reset how many times we're going to try to fill each of these courses
+		angular_try = 0
+		python_try = 0
+		php_try = 0
+		simple_try = 0
+
+		shiftNotFilled = true
+
+
+		while(shiftNotFilled)		#while the shift hasn't been manually filled [cause we're out of adviors] OR we've filled it completely [with good advisors]
+
+			if (self.advisors.count < self.advisor_number)
+				rand_advisor = nil
+				rand_num = Advisor.count					#pick a number between 0 and the number of Advisors
+
+				while rand_advisor.nil? do								#keep picking an advisor at random until you get one that's not nil
+					rand_advisor = Advisor.find_by_id(Random.rand(rand_num))
+				end
+
+
+				if rand_advisor.available?(self)					# check that advisor is available
+					if rand_advisor.notOnShift?(self)				# check that advisor isn't already on shift
+
+						puts "Proficiency tries: Rails: #{rails_try}, Angular: #{angular_try}, Python: #{python_try}, PHP: #{php_try}"
+
+						this_shift = Shift.find(self.id)
+
+						if this_shift.rails >= proficiency_bar && rails_try <= 20
+							puts "Rails OK!"
+							if this_shift.angular >= proficiency_bar && angular_try <= 20
+								puts "Angular OK!"
+								if this_shift.python >= proficiency_bar && python_try <= 20
+									puts "Python OK!"
+										if this_shift.php >= proficiency_bar && php_try <=20
+											puts "PHP OK!"
+
+												if simple_try <= 20
+													"Filling this shift with remaining advisors: try #{simple_try}/20"
+													Shift.placeOnShift(rand_advisor, self) 
+												else
+													#if all this fails and we simply can't find good enough advisors to fill the shift, we need to be okay leaving empty slots
+													puts "==========we're our of viable advisors. SHUTTING DOWN============"
+													shiftNotFilled = false		# manually override
+												end
+										else 
+											puts "This shift needs PHP help; only at #{this_shift.php}/#{proficiency_bar} right now. Try #{php_try}/20"
+											if rand_advisor.php > 1
+												puts "#{rand_advisor.name} can do PHP: #{rand_advisor.php}"
+												Shift.placeOnShift(rand_advisor, self) 
+											else
+												php_try +=1
+											end
+										end
+								else
+									puts "This shift needs Python help; only at #{this_shift.python}/#{proficiency_bar} right now. Try #{python_try}/20"
+									if rand_advisor.python > 1
+										puts "#{rand_advisor.name} can do Python: #{rand_advisor.python}"
+										Shift.placeOnShift(rand_advisor, self) 
+									else
+										python_try += 1
+									end
+								end
+							else
+								puts "This shift needs Angular help; only at #{this_shift.angular}/#{proficiency_bar} right now. Try #{angular_try}/20"
+								if rand_advisor.angular > 1
+									puts "#{rand_advisor.name} can do Angular: #{rand_advisor.angular}"
+									Shift.placeOnShift(rand_advisor, self) 
+								else
+									angular_try += 1
+								end
+							end
+						else
+							puts "This shift needs Rails help; only at #{this_shift.rails}/#{proficiency_bar} right now. Try #{rails_try}/20"
+							if rand_advisor.rails > 1
+								puts "#{rand_advisor.name} can do Rails: #{rand_advisor.rails}"
+								Shift.placeOnShift(rand_advisor, self) 
+							else
+								rails_try += 1
+							end
+						end
+					end
+				end
+
+				
+
+			else
+				shiftNotFilled = false				# if we've filled the shift and self.advisors.count >= self.advisor_number, we're done!
+			end
+		end
+
+		puts "DONE! Filled shift # #{self.id} with #{self.advisors.count}/#{self.advisor_number} Advisors"
+		puts "ENDING ==================================="
 
 	end
 
 
 	def self.placeOnShift(advisor, shift)
-		ShiftAssignment.create(advisor_id: advisor.id, shift_id: shift.id, start: shift.start, end: shift.end)
+		if advisor.totalHours <= advisor.max_hours
+			ShiftAssignment.create(advisor_id: advisor.id, shift_id: shift.id, start: shift.start, end: shift.end)
+			puts "ADVISOR #{advisor.name} PLACED ON SHIFT!"
+			Shift.updateShiftProficiency(shift)
+		else
+			puts "#{advisor.name} is over hours"
+		end
+		
 	end
 
-	def self.getLength(s)
-		length = (((s.end-s.start).to_i)/60 + 1)/60
-		puts "the length is #{length} hours"
+	def getLength
+		length = (((self.end-self.start).to_i)/60 + 1)/60
 		return length
 	end
 
@@ -127,17 +168,16 @@ class Shift < ActiveRecord::Base
 			shift.sql 			+= a.sql
 			shift.git 			+= a.git
 			shift.cmd 			+= a.cmd	
-			puts "shift html is now at #{shift.html}"
 			shift.save
 		end
 
-		shift.save
+		puts "Final proficiency: #{Shift.find(shift.id).getProfs}"
 
 
 	end
 
-	def self.getProfs(shift)
-		return [shift.html, shift.js, shift.jquery, shift.angular, shift.ruby, shift.rails, shift.php, shift.python, shift.java, shift.sql, shift.git, shift.cmd]
+	def getProfs
+		return [self.html, self.js, self.jquery, self.angular, self.ruby, self.rails, self.php, self.python, self.java, self.sql, self.git, self.cmd]
 	end
 
 
