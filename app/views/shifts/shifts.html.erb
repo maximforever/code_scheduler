@@ -1,17 +1,14 @@
 <h1>Shift Assignments</h1>
-
-    <p> There are currently <%= @all_shifts.count %> shifts assigned in total.
-<br>
-
-
+<p> There are currently <%= @all_shifts.count %> shifts assigned in total.</p>
 
 
     <% @all_shifts.each do |s| %>
-        <br><%= s.start.day %>/<%= s.start.month %>, <%= s.start.hour %>:00 - <%= s.end.day %>/<%= s.end.month %>, <%= s.end.hour %>:<%= s.end.min %>
         <p>
+            <br><%= s.start.month %>/<%= s.start.day %>, <%= s.start.hour %>:00 - <%= s.end.hour %>:<%= s.end.min %>
+            <br>Advisors scheduled: <%= s.advisors.count %>/<%= s.advisor_number %>
+
             <br>Rails: <%= s.rails %>, Angular: <%= s.angular %>, Python: <%= s.python %>, PHP: <%= s.php %>
         </p>
-
         <% s.advisors.each do |a| %>
             <%= a.name %>
             <br>

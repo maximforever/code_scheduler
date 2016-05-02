@@ -36,7 +36,7 @@ class Shift < ActiveRecord::Base
 
 			if (self.advisors.count < self.advisor_number)
 				rand_advisor = nil
-				rand_num = Advisor.count					#pick a number between 0 and the number of Advisors
+				rand_num = Advisor.count + 82						#pick a number between 0 and the number of Advisors
 
 				while rand_advisor.nil? do								#keep picking an advisor at random until you get one that's not nil
 					rand_advisor = Advisor.find_by_id(Random.rand(rand_num))
@@ -50,15 +50,18 @@ class Shift < ActiveRecord::Base
 
 						this_shift = Shift.find(self.id)
 
-						if this_shift.rails >= proficiency_bar && rails_try <= 20
+						if this_shift.rails >= proficiency_bar || rails_try >= 20
 							puts "Rails OK!"
-							if this_shift.angular >= proficiency_bar && angular_try <= 20
+							puts "Out of Rails tries" if rails_try >= 20
+							if this_shift.angular >= proficiency_bar || angular_try >= 20
 								puts "Angular OK!"
-								if this_shift.python >= proficiency_bar && python_try <= 20
+								puts "Out of Angular tries" if angular_try >= 20
+								if this_shift.python >= proficiency_bar || python_try >= 20
 									puts "Python OK!"
-										if this_shift.php >= proficiency_bar && php_try <=20
+									puts "Out of Python tries" if python_try >= 20
+										if this_shift.php >= proficiency_bar || php_try >=20
 											puts "PHP OK!"
-
+											puts "Out of PHP tries" if php_try >= 20
 												if simple_try <= 20
 													"Filling this shift with remaining advisors: try #{simple_try}/20"
 													Shift.placeOnShift(rand_advisor, self) 
@@ -69,7 +72,7 @@ class Shift < ActiveRecord::Base
 												end
 										else 
 											puts "This shift needs PHP help; only at #{this_shift.php}/#{proficiency_bar} right now. Try #{php_try}/20"
-											if rand_advisor.php > 1
+											if rand_advisor.php > 2
 												puts "#{rand_advisor.name} can do PHP: #{rand_advisor.php}"
 												Shift.placeOnShift(rand_advisor, self) 
 											else
@@ -78,7 +81,7 @@ class Shift < ActiveRecord::Base
 										end
 								else
 									puts "This shift needs Python help; only at #{this_shift.python}/#{proficiency_bar} right now. Try #{python_try}/20"
-									if rand_advisor.python > 1
+									if rand_advisor.python > 2
 										puts "#{rand_advisor.name} can do Python: #{rand_advisor.python}"
 										Shift.placeOnShift(rand_advisor, self) 
 									else
@@ -87,11 +90,11 @@ class Shift < ActiveRecord::Base
 								end
 							else
 								puts "This shift needs Angular help; only at #{this_shift.angular}/#{proficiency_bar} right now. Try #{angular_try}/20"
-								if rand_advisor.angular > 1
+								if rand_advisor.angular > 2
 									puts "#{rand_advisor.name} can do Angular: #{rand_advisor.angular}"
 									Shift.placeOnShift(rand_advisor, self) 
 								else
-									angular_try += 1
+									angular_try += 2
 								end
 							end
 						else
