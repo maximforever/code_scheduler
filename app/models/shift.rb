@@ -35,18 +35,16 @@ class Shift < ActiveRecord::Base
 		while(shiftNotFilled)		#while the shift hasn't been manually filled [cause we're out of adviors] OR we've filled it completely [with good advisors]
 
 			if (self.advisors.count < self.advisor_number)
-				rand_advisor = nil
-				rand_num = Advisor.count + 82						#pick a number between 0 and the number of Advisors
 
-				while rand_advisor.nil? do								#keep picking an advisor at random until you get one that's not nil
-					rand_advisor = Advisor.find_by_id(Random.rand(rand_num))
-				end
+				
+				rand_advisor = Advisor.order("Random()").first			# pick random advisor
+
 
 
 				if rand_advisor.available?(self)					# check that advisor is available
 					if rand_advisor.notOnShift?(self)				# check that advisor isn't already on shift
 
-						puts "Proficiency tries: Rails: #{rails_try}, Angular: #{angular_try}, Python: #{python_try}, PHP: #{php_try}"
+						puts "Proficiency tries: Rails: #{rails_try}, Angular: #{angular_try}, Python: #{python_try}, PHP: #{php_try}, other: #{simple_try}"
 
 						this_shift = Shift.find(self.id)
 
@@ -64,7 +62,8 @@ class Shift < ActiveRecord::Base
 											puts "Out of PHP tries" if php_try >= 20
 												if simple_try <= 20
 													"Filling this shift with remaining advisors: try #{simple_try}/20"
-													Shift.placeOnShift(rand_advisor, self) 
+													least_scheduled_advisor = Shift.findFewestHours(this_shift.id)
+													Shift.placeOnShift(least_scheduled_advisor, self) 
 												else
 													#if all this fails and we simply can't find good enough advisors to fill the shift, we need to be okay leaving empty slots
 													puts "==========we're our of viable advisors. SHUTTING DOWN============"
@@ -181,6 +180,33 @@ class Shift < ActiveRecord::Base
 
 	def getProfs
 		return [self.html, self.js, self.jquery, self.angular, self.ruby, self.rails, self.php, self.python, self.java, self.sql, self.git, self.cmd]
+	end
+
+	def self.findFewestHours(i)			# we have to somehow identify the shift
+		advisors = Advisor.all
+
+		available_advisors = []
+		least_scheduled = nil 				# this is the advisor with the fewest hours
+		fewest_hours = 99
+		this_shift = Shift.find(i)
+
+		advisors.each do |a|
+			if a.availability[i].to_i == 1 
+				if a.notOnShift?(this_shift)
+					available_advisors.push(a) 
+				end
+			end
+		end
+
+		available_advisors.each do |a|
+			if a.totalHours < fewest_hours
+				least_scheduled = a
+				fewest_hours = a.totalHours
+			end
+		end
+
+		puts "The least scheduled advisor is #{least_scheduled.name}" unless least_scheduled.nil?
+		return least_scheduled
 	end
 
 

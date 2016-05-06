@@ -11,25 +11,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160428110404) do
+ActiveRecord::Schema.define(version: 20160506114507) do
 
   create_table "advisors", force: :cascade do |t|
     t.string   "name"
     t.integer  "max_hours"
-    t.integer  "html",       default: 0
-    t.integer  "js",         default: 0
-    t.integer  "jquery",     default: 0
-    t.integer  "angular",    default: 0
-    t.integer  "ruby",       default: 0
-    t.integer  "rails",      default: 0
-    t.integer  "php",        default: 0
-    t.integer  "python",     default: 0
-    t.integer  "java",       default: 0
-    t.integer  "sql",        default: 0
-    t.integer  "git",        default: 0
-    t.integer  "cmd",        default: 0
-    t.datetime "created_at",             null: false
-    t.datetime "updated_at",             null: false
+    t.integer  "html",         default: 0
+    t.integer  "js",           default: 0
+    t.integer  "jquery",       default: 0
+    t.integer  "angular",      default: 0
+    t.integer  "ruby",         default: 0
+    t.integer  "rails",        default: 0
+    t.integer  "php",          default: 0
+    t.integer  "python",       default: 0
+    t.integer  "java",         default: 0
+    t.integer  "sql",          default: 0
+    t.integer  "git",          default: 0
+    t.integer  "cmd",          default: 0
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
+    t.text     "availability"
   end
 
   create_table "shift_assignments", force: :cascade do |t|

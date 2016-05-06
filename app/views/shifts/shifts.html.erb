@@ -9,7 +9,7 @@
 
             <br>Rails: <%= s.rails %>, Angular: <%= s.angular %>, Python: <%= s.python %>, PHP: <%= s.php %>
         </p>
-        <% s.advisors.each do |a| %>
+        <% s.advisors.order("name ASC").each do |a| %>
             <%= a.name %>
             <br>
         <% end %>

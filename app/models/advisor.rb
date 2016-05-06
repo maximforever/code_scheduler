@@ -1,6 +1,7 @@
 class Advisor < ActiveRecord::Base
 	has_many :shift_assignments
 	has_many :shifts, :through => :shift_assignments
+	serialize :availability, Array
 
 	def available?(shift)
 		@vacations = Vacation.where(name: self.name)				#pull all the time off for this advisor
@@ -48,13 +49,17 @@ class Advisor < ActiveRecord::Base
 		on_this_shift = false
 		on_today = false
 
+		# this block of code checks if the advisor is on today AND on this shift - we only need to check if on todayv zx
 		if shift.advisors.include?(self)					#is the advisor already on this shift?
 			puts "#{self.name} is already on this shift."
 			on_this_shift = true
 			return false 
 		end
+
+
 							
-		self.shifts.each do |s|			#go through all the shifts and check that none of them are today
+		
+			self.shifts.each do |s|			#go through all the shifts and check that none of them are today
 			puts "testing shift on #{shift.start.month}/#{shift.start.day}"
 
 			if (s.start.day.to_i == shift.start.day.to_i && s.start.month.to_i == shift.start.month.to_i)
@@ -68,20 +73,84 @@ class Advisor < ActiveRecord::Base
 			puts "The advisor is good to work this shift"
 			return true 
 		end
-	end
+
 =begin
 
-	def onShiftThisWeek?(shift)
-			self.shifts.each do |s|
-				puts "testing shift"
-				if (s.start.day == shift.start.day && s.start.month == shift.start.month)
-					"#{self.name} is already working that day, on #{shift.start.month}/#{shift.start.day}"
-					return false
-				end		
-			return true
+		self.shifts.each do |s|			#go through all the shifts and check that none of them are today
+			puts "testing shift on #{shift.start.month}/#{shift.start.day}"
+
+			if (s.start.day.to_i == shift.start.day.to_i && s.start.month.to_i == shift.start.month.to_i)
+				"#{self.name} is already working that day, on #{shift.start.month}/#{shift.start.day}"
+				on_today = true
+				return false
+			end		
+		end
+
+		unless on_today
+			puts "The advisor is good to work this shift"
+			return true 
+		end
+=end
+
+
+	end
+
+
+
+	def self.setAvailability
+		advisors = Advisor.all
+		shifts = Shift.all
+
+
+		advisors.each do |a|				# cycle through each advisor
+			shifts.each do |s|
+				if a.available?(s)
+					a.availability.push(1)
+				else
+					a.availability.push(0)
+				end
+			end
+			a.save
 		end
 	end
-=end
+
+	def maxHours
+		max_hours_available = 0
+
+		(0..6).each do |i|
+			max_hours_available += self.availability[i]*2
+		end
+
+		(7..27).each do |i|
+			max_hours_available += self.availability[i]*4
+		end
+
+		(28..34).each do |i|
+			max_hours_available += self.availability[i]*2
+		end
+
+		max_hours_available = 40 if max_hours_available > 40
+
+		puts "#{self.name} can work #{max_hours_available} hours this week"
+		return max_hours_available
+	end
+
+	def utilized
+		util = 0
+		if self.maxHours == 0
+			puts "This advisor is unavailable"
+			util = 9.99
+		else
+			puts "This advisor is available"
+			util = self.totalHours.to_f/self.maxHours.to_f
+		end
+
+		return util
+
+
+
+
+	end
 
 
 
