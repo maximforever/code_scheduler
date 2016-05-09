@@ -5,12 +5,13 @@ class Advisor < ActiveRecord::Base
 	serialize :availability, Array
 
 	def available?(shift)
-		@vacations = Vacation.where(name: self.name)				#pull all the time off for this advisor
-		puts "#{self.name}: There are #{@vacations.length} vacation records to test"
+#		vacations = Vacation.where(name: self.name)				#pull all the time off for this advisor
+		vacations = self.vacations 		#this should be slightly faster
+		puts "#{self.name}: There are #{vacations.length} vacation records to test"
 		start_valid = true;
 		end_valid = true;
 
-		@vacations.each do |v|										#for each time off
+		vacations.each do |v|										#for each time off
 			start_valid = false if shift.start.between?(v.start, v.end)			#is the start of the shift during a time off?
 			end_valid = false if shift.end.between?(v.start, v.end)				# is the end of the shift during a time off?
 		end
@@ -25,24 +26,6 @@ class Advisor < ActiveRecord::Base
 			puts "#{self.name} can work"
 			return true
 		end	
-	end
-
-	def hours_today(date)
-
-		advisor = Advisor.find(self.id)
-		
-	end
-
-	def totalHours
-
-		advisor = Advisor.find(self.id)
-
-		total_hrs = 0
-
-		advisor.shifts.each {|s| total_hrs += s.getLength}
-		puts "#{advisor.name} is working a total of #{total_hrs}/#{advisor.max_hours} hours this week"
-		return total_hrs
-
 	end
 
 	def notOnShift?(shift)	
@@ -75,6 +58,24 @@ class Advisor < ActiveRecord::Base
 	end
 
 
+
+	def hours_today(date)
+
+		advisor = Advisor.find(self.id)
+		
+	end
+
+	def totalHours
+
+		advisor = Advisor.find(self.id)
+
+		total_hrs = 0
+
+		advisor.shifts.each {|s| total_hrs += s.getLength}
+		puts "#{advisor.name} is working a total of #{total_hrs}/#{advisor.max_hours} hours this week"
+		return total_hrs
+
+	end
 
 	def self.setAvailability
 		advisors = Advisor.all
@@ -125,10 +126,6 @@ class Advisor < ActiveRecord::Base
 		end
 
 		return util
-
-
-
-
 	end
 
 

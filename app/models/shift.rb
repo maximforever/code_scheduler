@@ -10,8 +10,14 @@ class Shift < ActiveRecord::Base
 		all_shifts.each do |shift|			
 			shift.fillShift
 		end
+	end
 
-
+	def self.fillVacations
+		Vacation.all.each do |v|
+			a = Advisor.find_by_name(v.name)
+			v.advisor_id = a.id unless a.nil?
+			v.save
+		end
 	end
 
 
@@ -21,7 +27,7 @@ class Shift < ActiveRecord::Base
 		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
 
 		proficiency_bar = 3				# this is pretty important - how much proficiency (max 5 per advisor) do we want for each course per shift?
-		min_skill = 2						# how well should an advisor know a course to get on shif?
+		min_skill = 2							# how well should an advisor know a course to get on shif?
 
 		rails_try = 0							# we reset how many times we're going to try to fill each of these courses
 		angular_try = 0
@@ -41,6 +47,7 @@ class Shift < ActiveRecord::Base
 
 				if rand_advisor.available?(self)					# check that advisor is available
 					if rand_advisor.notOnShift?(self)				# check that advisor isn't already on shift
+
 						puts "#{rand_advisor.name} is available; testing"
 						puts "Proficiency tries: Rails: #{rails_try}, Angular: #{angular_try}, Python: #{python_try}, PHP: #{php_try}, other: #{simple_try}"
 
@@ -83,11 +90,17 @@ class Shift < ActiveRecord::Base
 						elsif simple_try <= 20
 							"Filling this shift with remaining advisors: try #{simple_try}/20"
 							least_scheduled_advisor = Shift.findFewestHours(self.id)
-							Shift.placeOnShift(least_scheduled_advisor, self) 
+							rand_advisor = least_scheduled_advisor
+							Shift.placeOnShift(rand_advisor, self) 
 						else
 							#if all this fails and we simply can't find good enough advisors to fill the shift, we need to be okay leaving empty slots
 							puts "==========we're our of viable advisors. ENDING SEARCH FOR THIS SHIFT============"
 							shiftNotFilled = false		# manually override
+						end
+
+						if self.advisors.count >= self.advisor_number
+							puts "That's all for this one, folks!"
+							shiftNotFilled = false 
 						end
 
 					end
