@@ -1,6 +1,7 @@
 class Advisor < ActiveRecord::Base
 	has_many :shift_assignments
 	has_many :shifts, :through => :shift_assignments
+	has_many :vacations
 	serialize :availability, Array
 
 	def available?(shift)
@@ -15,10 +16,10 @@ class Advisor < ActiveRecord::Base
 		end
 
 		if !start_valid
-			puts "Can't work - start time overlaps"
+			puts "XX Can't work - start time overlaps"
 			return false
 		elsif !end_valid
-			puts "Can't work - end time overlaps"
+			puts "XX Can't work - end time overlaps"
 			return false
 		else
 			puts "#{self.name} can work"
@@ -49,32 +50,13 @@ class Advisor < ActiveRecord::Base
 		on_this_shift = false
 		on_today = false
 
-		# this block of code checks if the advisor is on today AND on this shift - we only need to check if on todayv zx
+		# this block of code checks if the advisor is on today AND on this shift - do we only need to check if on today?
+
 		if shift.advisors.include?(self)					#is the advisor already on this shift?
 			puts "#{self.name} is already on this shift."
 			on_this_shift = true
 			return false 
 		end
-
-
-							
-		
-			self.shifts.each do |s|			#go through all the shifts and check that none of them are today
-			puts "testing shift on #{shift.start.month}/#{shift.start.day}"
-
-			if (s.start.day.to_i == shift.start.day.to_i && s.start.month.to_i == shift.start.month.to_i)
-				"#{self.name} is already working that day, on #{shift.start.month}/#{shift.start.day}"
-				on_today = true
-				return false
-			end		
-		end
-
-		if (!(on_today) || !(on_this_shift))		# the ugliest line of code I've ever written
-			puts "The advisor is good to work this shift"
-			return true 
-		end
-
-=begin
 
 		self.shifts.each do |s|			#go through all the shifts and check that none of them are today
 			puts "testing shift on #{shift.start.month}/#{shift.start.day}"
@@ -86,12 +68,9 @@ class Advisor < ActiveRecord::Base
 			end		
 		end
 
-		unless on_today
-			puts "The advisor is good to work this shift"
+		if (!(on_today) && !(on_this_shift))		# the ugliest line of code I've ever written  
 			return true 
 		end
-=end
-
 
 	end
 

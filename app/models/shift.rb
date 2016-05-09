@@ -15,13 +15,13 @@ class Shift < ActiveRecord::Base
 	end
 
 
-
 	def fillShift
 
 		puts "STARTING ==================================="
 		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
 
-		proficiency_bar = 3				# this is pretty important - how much proficiency (max 5 per advisor) do we want for our courses?
+		proficiency_bar = 3				# this is pretty important - how much proficiency (max 5 per advisor) do we want for each course per shift?
+		min_skill = 2						# how well should an advisor know a course to get on shif?
 
 		rails_try = 0							# we reset how many times we're going to try to fill each of these courses
 		angular_try = 0
@@ -33,85 +33,65 @@ class Shift < ActiveRecord::Base
 
 
 		while(shiftNotFilled)		#while the shift hasn't been manually filled [cause we're out of adviors] OR we've filled it completely [with good advisors]
-
 			if (self.advisors.count < self.advisor_number)
-
-				
+				puts "Looking for our next advisor!"
+				puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
 				rand_advisor = Advisor.order("Random()").first			# pick random advisor
-
-
+				puts "==>Random advisor pulled: #{rand_advisor.name}"
 
 				if rand_advisor.available?(self)					# check that advisor is available
 					if rand_advisor.notOnShift?(self)				# check that advisor isn't already on shift
-
+						puts "#{rand_advisor.name} is available; testing"
 						puts "Proficiency tries: Rails: #{rails_try}, Angular: #{angular_try}, Python: #{python_try}, PHP: #{php_try}, other: #{simple_try}"
 
-						this_shift = Shift.find(self.id)
-
-						if this_shift.rails >= proficiency_bar || rails_try >= 20
-							puts "Rails OK!"
-							puts "Out of Rails tries" if rails_try >= 20
-							if this_shift.angular >= proficiency_bar || angular_try >= 20
-								puts "Angular OK!"
-								puts "Out of Angular tries" if angular_try >= 20
-								if this_shift.python >= proficiency_bar || python_try >= 20
-									puts "Python OK!"
-									puts "Out of Python tries" if python_try >= 20
-										if this_shift.php >= proficiency_bar || php_try >=20
-											puts "PHP OK!"
-											puts "Out of PHP tries" if php_try >= 20
-												if simple_try <= 20
-													"Filling this shift with remaining advisors: try #{simple_try}/20"
-													least_scheduled_advisor = Shift.findFewestHours(this_shift.id)
-													Shift.placeOnShift(least_scheduled_advisor, self) 
-												else
-													#if all this fails and we simply can't find good enough advisors to fill the shift, we need to be okay leaving empty slots
-													puts "==========we're our of viable advisors. SHUTTING DOWN============"
-													shiftNotFilled = false		# manually override
-												end
-										else 
-											puts "This shift needs PHP help; only at #{this_shift.php}/#{proficiency_bar} right now. Try #{php_try}/20"
-											if rand_advisor.php > 2
-												puts "#{rand_advisor.name} can do PHP: #{rand_advisor.php}"
-												Shift.placeOnShift(rand_advisor, self) 
-											else
-												php_try +=1
-											end
-										end
-								else
-									puts "This shift needs Python help; only at #{this_shift.python}/#{proficiency_bar} right now. Try #{python_try}/20"
-									if rand_advisor.python > 2
-										puts "#{rand_advisor.name} can do Python: #{rand_advisor.python}"
-										Shift.placeOnShift(rand_advisor, self) 
-									else
-										python_try += 1
-									end
-								end
-							else
-								puts "This shift needs Angular help; only at #{this_shift.angular}/#{proficiency_bar} right now. Try #{angular_try}/20"
-								if rand_advisor.angular > 2
-									puts "#{rand_advisor.name} can do Angular: #{rand_advisor.angular}"
-									Shift.placeOnShift(rand_advisor, self) 
-								else
-									angular_try += 2
-								end
-							end
-						else
-							puts "This shift needs Rails help; only at #{this_shift.rails}/#{proficiency_bar} right now. Try #{rails_try}/20"
-							if rand_advisor.rails > 1
+						if self.rails < proficiency_bar && rails_try < 20		# if we're not up to part with rails AND have tried less than 20 times.
+							puts "This shift needs Rails help; only at #{self.rails}/#{proficiency_bar} right now. Try #{rails_try}/20"
+							rails_try +=1
+							if rand_advisor.rails > min_skill
 								puts "#{rand_advisor.name} can do Rails: #{rand_advisor.rails}"
 								Shift.placeOnShift(rand_advisor, self) 
 							else
-								rails_try += 1
+								puts "XX #{rand_advisor.name} cannot do Rails: only #{rand_advisor.rails}"
 							end
+						elsif self.angular < proficiency_bar && angular_try < 20	
+							puts "This shift needs Angular help; only at #{self.angular}/#{proficiency_bar} right now. Try #{angular_try}/20"
+							angular_try +=1
+							if rand_advisor.angular > min_skill
+								puts "#{rand_advisor.name} can do Angular: #{rand_advisor.angular}"
+								Shift.placeOnShift(rand_advisor, self) 
+							else
+								puts "XX #{rand_advisor.name} cannot do Angular: only #{rand_advisor.php}"
+							end
+						elsif self.php < proficiency_bar && php_try < 20	
+							puts "This shift needs PHP help; only at #{self.php}/#{proficiency_bar} right now. Try #{php_try}/20"
+							php_try +=1
+							if rand_advisor.php > min_skill
+								puts "#{rand_advisor.name} can do PHP: #{rand_advisor.php}"
+								Shift.placeOnShift(rand_advisor, self) 
+							else
+								puts "XX #{rand_advisor.name} cannot do PHP: only #{rand_advisor.php}"
+							end
+						elsif self.python < proficiency_bar && python_try < 20	
+							puts "This shift needs Python help; only at #{self.python}/#{proficiency_bar} right now. Try #{python_try}/20"
+							python_try +=1
+							if rand_advisor.python > min_skill
+								puts "#{rand_advisor.name} can do Python: #{rand_advisor.python}"
+								Shift.placeOnShift(rand_advisor, self) 
+							else
+								puts "XX #{rand_advisor.name} cannot do Python: only #{rand_advisor.python}"
+							end
+						elsif simple_try <= 20
+							"Filling this shift with remaining advisors: try #{simple_try}/20"
+							least_scheduled_advisor = Shift.findFewestHours(self.id)
+							Shift.placeOnShift(least_scheduled_advisor, self) 
+						else
+							#if all this fails and we simply can't find good enough advisors to fill the shift, we need to be okay leaving empty slots
+							puts "==========we're our of viable advisors. ENDING SEARCH FOR THIS SHIFT============"
+							shiftNotFilled = false		# manually override
 						end
+
 					end
 				end
-
-				
-
-			else
-				shiftNotFilled = false				# if we've filled the shift and self.advisors.count >= self.advisor_number, we're done!
 			end
 		end
 
@@ -122,7 +102,8 @@ class Shift < ActiveRecord::Base
 
 
 	def self.placeOnShift(advisor, shift)
-		if advisor.totalHours <= advisor.max_hours
+		puts " ===>> Placing #{advisor.name} on shift on #{shift.start.month}/#{shift.start.day} at #{shift.start.hour}:#{shift.start.min}"
+		if advisor.totalHours <= advisor.max_hours						#make sure this advisor is under max hours
 			ShiftAssignment.create(advisor_id: advisor.id, shift_id: shift.id, start: shift.start, end: shift.end)
 			puts "ADVISOR #{advisor.name} PLACED ON SHIFT!"
 			Shift.updateShiftProficiency(shift)
@@ -190,18 +171,18 @@ class Shift < ActiveRecord::Base
 		fewest_hours = 99
 		this_shift = Shift.find(i)
 
-		advisors.each do |a|
-			if a.availability[i].to_i == 1 
-				if a.notOnShift?(this_shift)
-					available_advisors.push(a) 
+		advisors.each do |a|											#go through each advisor
+			if a.availability[i].to_i == 1 					# if the advisor available on this shift...
+				if a.notOnShift?(this_shift)					# check that the advisor isn't on shift...
+					available_advisors.push(a) 					# and place into a pool over available advisors
 				end
 			end
 		end
 
-		available_advisors.each do |a|
-			if a.totalHours < fewest_hours
-				least_scheduled = a
-				fewest_hours = a.totalHours
+		available_advisors.each do |a|					# take the pool of available advisors
+			if a.totalHours < fewest_hours				# if this advisor is working fewer hours than the current max hours
+				least_scheduled = a 								# then this is now the least scheduled advisor
+				fewest_hours = a.totalHours					# and his/her hours are the fewest hours
 			end
 		end
 
