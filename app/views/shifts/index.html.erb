@@ -10,6 +10,7 @@
         <td>Start time:</td>
         <td>End time:</td>
         <td>Advisor name:</td>
+        <td>Position:</td>
         <td>Rails</td>
         <td>Angular</td>
         <td>Python</td>
@@ -24,6 +25,7 @@
             <td><%= s.start.day %>/<%= s.start.month %>, <%= s.start.hour %>:00</td>
             <td><%= s.end.day %>/<%= s.end.month %>, <%= s.end.hour %>:<%= s.end.min %></td>
             <td><%= @advisor.name %></td>
+            <td><%= s.position %></td>
 
         </tr> 
 

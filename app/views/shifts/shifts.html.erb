@@ -17,11 +17,28 @@
 
             <br>Rails: <%= s.rails %>, Angular: <%= s.angular %>, Python: <%= s.python %>, PHP: <%= s.php %>
         </p>
+        <table>
+        <tr>
+            <td>Name:</td>
+            <td>Position:</td>
+            <td>R</td>
+            <td>A</td>
+            <td>P</td>
+            <td>P</td>
+        </tr>
         <% s.advisors.order("name ASC").each do |a| %>
-            <%= a.name %>
-            <br>
+            
+            <% shift = ShiftAssignment.where(:advisor_id => a.id, :shift_id => s.id)[0] %>
+            <tr>
+                <td><%= a.name %></td> 
+                <td><%= shift.position %></td>
+                <td><%= a.rails %></td>
+                <td><%= a.angular %></td>
+                <td><%= a.php %></td>
+                <td><%= a.python %></td>
+            </tr>   
         <% end %>
         <br><br>
-
+        </table>
     <% end %>
 
