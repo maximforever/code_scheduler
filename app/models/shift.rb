@@ -26,7 +26,7 @@ class Shift < ActiveRecord::Base
 		puts "STARTING ==================================="
 		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
 
-		proficiency_bar = 3				# this is pretty important - how much proficiency (max 5 per advisor) do we want for each course per shift?
+		proficiency_bar = 3						# this is pretty important - how much proficiency (max 5 per advisor) do we want for each course per shift?
 		min_skill = 2							# how well should an advisor know a course to get on shif?
 
 		rails_try = 0							# we reset how many times we're going to try to fill each of these courses
