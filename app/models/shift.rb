@@ -8,7 +8,7 @@ class Shift < ActiveRecord::Base
 		all_shifts = Shift.all
 
 		all_shifts.each do |shift|			
-			shift.fillShift
+			shift.fill_shift
 		end
 	end
 
@@ -19,6 +19,151 @@ class Shift < ActiveRecord::Base
 			v.save
 		end
 	end
+
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+def fill_shift
+
+		puts "STARTING for shift #{self.id} ===================="
+		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
+		
+		shift_filled = false
+
+		max_tries 			= 20
+		rails_try			= 0
+		angular_try			= 0
+		php_try				= 0
+		python_try			= 0
+		general_try 		= 0
+
+		until(self.advisors.count >= self.advisor_number || shift_filled) do				# we keep searching until we hit the number of advisors we need OR manually fill the shift
+
+			if (self.rails < 1 && rails_try < max_tries)
+				puts "Looking for a RAILS advisor, try #{rails_try}"
+				rails_try += 1
+				fill_with_language("rails")
+			elsif (self.angular < 1 && angular_try < max_tries)
+				puts "Looking for a ANGULAR advisor, try #{angular_try}"
+				angular_try += 1
+				fill_with_language("angular")
+			elsif (self.php < 1&& php_try < max_tries)
+				puts "Looking for a PHP advisor, try #{php_try}"
+				php_try += 1
+				fill_with_language("php")
+			elsif (self.python < 1&& python_try < max_tries)
+				puts "Looking for a PYTHON advisor, try #{python_try}"
+				python_try += 1
+				fill_with_language("python")
+			elsif (general_try < max_tries)
+				puts "looking for a GENERAL advisor, try #{general_try}"
+				general_try += 1
+				fill_with_language("general")
+			else
+				puts "That's all, folks! We tried rails #{rails_try} times, angular #{angular_try} times, php  #{php_try} times, python #{python_try} times."
+				shift_filled = true
+			end
+
+		end	
+		
+		puts "ENDING ===================="
+
+
+	end
+
+
+
+	def fill_with_language(lang)					# this method finds the least scheduled available advisor who knows the input language
+
+		minimum_proficiency = 2
+		languages = ["rails", "angular", "php", "python", "general"]
+
+		if languages.include?(lang) 																					# make sure this is a real language
+			
+			if (lang == "general")
+				puts "grabbing a general advisor"
+				eligible = Advisor.all
+			else
+				puts "grabbing a specialized advisor"
+				eligible = Advisor.where("#{lang} > ?", minimum_proficiency)											# grab all the advisors that can support this language		
+			end
+
+			available = []																											# clear available advisors
+
+			eligible.each do |a|																								# get all the available advisors from eligible advisors
+				if a.available?(self) && a.notOnShift?(self)
+					available.push(a)
+				end		
+			end
+
+			available.shuffle!
+
+			if available.length > 0		# if there are any advisors who can do the language AND are available
+				"Some #{lang} advisors are available"
+				# now we have all the available advisors who can also do this language
+				# we want to pick the advisor with fewest hours this week
+
+				least_scheduled_advisor = nil
+				least_hours = 999
+
+				available.each do |av|
+					advisor_hours = av.totalHours
+
+					if advisor_hours < least_hours				# if this advisor has fewer hours this week than the least scheduled advisor, than this is the new least scheduled advisor
+						least_hours = advisor_hours
+						least_scheduled_advisor = av
+					end
+				end
+
+
+
+				Shift.placeOnShift(least_scheduled_advisor, self, lang)			# place the least scheduled advisor who knows this language on shift
+			else
+				"Nobody that can do #{lang} is available"
+			end
+
+		else
+			puts "#{lang} is not a valid language"
+		end
+	end
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	
+
+	def self.placeOnShift(advisor, shift, position)
+
+		case position
+			when "rails"
+				shift.rails = 1
+			when "angular"
+				shift.angular = 1
+			when "php"
+				shift.php = 1
+			when "python"
+				shift.python = 1
+		end
+
+		shift.save
+
+
+		puts " ===>> Placing #{advisor.name} on shift on #{shift.start.month}/#{shift.start.day} at #{shift.start.hour}:#{shift.start.min}"
+		if advisor.totalHours <= advisor.max_hours						#make sure this advisor is under max hours
+			s = ShiftAssignment.create(advisor_id: advisor.id, shift_id: shift.id, start: shift.start, end: shift.end, position: position)
+			puts "ADVISOR #{advisor.name} PLACED ON SHIFT for #{s.position}!"
+		else
+			puts "#{advisor.name} is over hours"
+		end
+		
+	end
+
+=begin
 
 
 	def fillShift
@@ -119,19 +264,8 @@ class Shift < ActiveRecord::Base
 		puts "ENDING ==================================="
 
 	end
+=end
 
-
-	def self.placeOnShift(advisor, shift, position)
-		puts " ===>> Placing #{advisor.name} on shift on #{shift.start.month}/#{shift.start.day} at #{shift.start.hour}:#{shift.start.min}"
-		if advisor.totalHours <= advisor.max_hours						#make sure this advisor is under max hours
-			s = ShiftAssignment.create(advisor_id: advisor.id, shift_id: shift.id, start: shift.start, end: shift.end, position: position)
-			puts "ADVISOR #{advisor.name} PLACED ON SHIFT for #{s.position}!"
-			Shift.updateShiftProficiency(shift)
-		else
-			puts "#{advisor.name} is over hours"
-		end
-		
-	end
 
 	def getLength
 		length = (((self.end-self.start).to_i)/60 + 1)/60
