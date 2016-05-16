@@ -31,7 +31,7 @@ class Shift < ActiveRecord::Base
 def fill_shift
 
 		puts "STARTING for shift #{self.id} ===================="
-		puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
+		
 		
 		shift_filled = false
 
@@ -43,7 +43,7 @@ def fill_shift
 		general_try 		= 0
 
 		until(self.advisors.count >= self.advisor_number || shift_filled) do				# we keep searching until we hit the number of advisors we need OR manually fill the shift
-
+			puts "There are currently advisors #{self.advisors.count}/#{self.advisor_number} on shift"
 			if (self.rails < 1 && rails_try < max_tries)
 				puts "Looking for a RAILS advisor, try #{rails_try}"
 				rails_try += 1
